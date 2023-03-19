@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memory Game</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body style="background: linear-gradient(to top, #1d1135, #0c164f, #5643fd);">
+    <div id="root"></div>
+    <script type="text/babel">
+
+        const Juego = () => {
+            return (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100vh',
+                    flexDirection: 'column',
+                }}>
+                <Tablero />
+            </div>)
+        }
+    
+        const Carta = ({card, onClick}) => {
+            return (
+                <div
+                    style = {{
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        height: '70%',
+                        width: '70%',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                        transition: 'transform 0.6s',
+                        transform: card.voltear ? 'rotateY(0deg)' : 'rotateY(180deg)',
+                        backgroundImage: card.voltear ? `url(${card.cara})` :  'url(./img/front.jpeg)',
+                    }}
+                    onClick = {() => onClick(card.id)}
+                ></div>
+            )
+        }
+    
+        const Tablero = () => {
+            const [ganar, setGanar] = React.useState(false)
+
+            const cartas = [
+                {id: 1, cara: './img/earth.jpeg', voltear: true},
+                {id: 2, cara: './img/jupiter.jpeg', voltear: true},
+                {id: 3, cara: './img/mars.jpeg', voltear: true},
+                {id: 4, cara: './img/mercury.jpeg', voltear: true},
+                {id: 5, cara: './img/moon.jpeg', voltear: true},
+                {id: 6, cara: './img/neptune.jpeg', voltear: true},
+                {id: 7, cara: './img/saturn.jpeg', voltear: true},
+                {id: 8, cara: './img/venus.jpeg', voltear: true},
+            ]
+
+            const [baraja, setBaraja] = React.useState([
+                ...cartas,
+                ...cartas.map(card => ({...card, id: card.id + 8}))
+            ])
+
+            const Movements = ({final: movs}) => {
+                return (
+                    <div style = {{
+                        color: 'white',
+                        fontSize: '30px',
+                    }}>
+                    <div>Movimientos: {movs}</div>
+                    </div>
+                ) 
+            }
+
+            const [movimientos, setMovimientos] = React.useState(0)
+            
+            const primera = React.useRef(null)
+            
+            const elClick = (id) => {
+                console.log(id)
+                setBaraja(prev => {
+                    const antes = [...prev]
+                    const obtenida = prev.find(card => card.id === id)
+
+                    if (obtenida.found) return antes
+
+                    obtenida.voltear = !obtenida.voltear
+
+                    if (primera.current === null) {
+                        primera.current = obtenida
+                        return antes
+                    }else{
+                        if (primera.current.cara === obtenida.cara && primera.current.id !== obtenida.id) {
+                            primera.current.found = true
+                            obtenida.found = true
+
+                            console.log('Match')
+                            console.log(antes)
+                            const ganar = antes.every(card => card.found)
+                            if (ganar) {
+                                setGanar(true)
+                            }
+                        }else{
+                            const voltearOtraVez = primera.current.id
+                            setTimeout( () => {
+                                vueltas(voltearOtraVez, obtenida.id)
+                            }, 900)
+                        }
+                        primera.current = null
+                    }
+                    return antes
+                })
+            }
+
+            const vueltas = (id_1, id_2) => {
+                setBaraja(prev => {
+                    const nueva = [...prev]
+                    nueva.forEach( (i) => {
+                        if (i.id === id_1 || i.id === id_2) {
+                            i.voltear = false
+                        }}
+                    )
+                    setMovimientos(prev => prev + 1)
+                    return nueva
+                })
+            }
+
+            React.useEffect(() => {
+                setBaraja(prev => {
+                    const nueva = prev.map(card => ({...card, voltear: false, found: false}))
+                    nueva.sort(() => Math.random() - 0.5)
+                    return nueva
+                })
+            }, [])
+
+            return (
+                <div style = {{
+                    alignItems: 'right',
+                    justifyContent: 'right',
+                }}>
+
+                <Movements final={movimientos} />
+                
+                {ganar &&
+                    <div style = {{
+                        fontSize: '30px',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        marginBottom: '20px',
+                    }}>¡Juego terminado!</div>
+                }
+                
+                <div style = {{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gridTemplateRows: 'repeat(4, 1fr)',
+                    width: '700px',
+                    height: '700px',
+                }}>
+                
+                {baraja.map(card => <Carta key={card.id} card={card} onClick={elClick} />)}
+                </div>
+                </div>
+            )
+        }
+        
+        ReactDOM.render(<Juego />, document.getElementById('root'))
+    </script>
+</body>
+</html>
